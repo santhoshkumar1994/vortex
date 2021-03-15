@@ -7,7 +7,6 @@ module VX_issue #(
 
     input wire      clk,
     input wire      reset,
-
 `ifdef PERF_ENABLE
     VX_perf_pipeline_if perf_pipeline_if,
 `endif
@@ -27,7 +26,9 @@ module VX_issue #(
     VX_gpr_rsp_if gpr_rsp_if();
 
     wire scoreboard_delay;
-
+`ifdef PERF_ENABLE
+    wire my_issue_fire;
+`endif
     VX_ibuffer #(
         .CORE_ID(CORE_ID)
     ) ibuffer (
@@ -91,6 +92,9 @@ module VX_issue #(
 
     // issue the instruction
     assign ibuf_deq_if.ready = !scoreboard_delay && execute_if.ready;     
+`ifdef PERF_ENABLE
+    assign my_issue_fire = ibuf_deq_if.valid && ibuf_deq_if.ready;
+`endif
 
     `SCOPE_ASSIGN (issue_fire,        ibuf_deq_if.valid && ibuf_deq_if.ready);
     `SCOPE_ASSIGN (issue_wid,         ibuf_deq_if.wid);
@@ -127,9 +131,19 @@ module VX_issue #(
     reg [43:0] perf_lsu_stalls;
     reg [43:0] perf_csr_stalls;
     reg [43:0] perf_gpu_stalls;
+    reg [2:0] counter;
+    integer i;
 `ifdef EXT_F_ENABLE
     reg [43:0] perf_fpu_stalls;
 `endif
+
+    always @(my_issue_fire) begin
+         counter = 0;
+	 for (i = 0; i <= 3; i = i + 1) begin
+	    if (ibuf_deq_if.tmask[i] == 1'b1)
+		counter = counter + 1'b1;
+         end
+    end
 
     always @(posedge clk) begin
         if (reset) begin
@@ -143,10 +157,9 @@ module VX_issue #(
             perf_fpu_stalls <= 0;
         `endif
         end else begin
-            if (decode_if.valid & !decode_if.ready) begin
-                perf_ibf_stalls <= perf_ibf_stalls  + 44'd1;
-            end
-            if (ibuf_deq_if.valid & scoreboard_delay) begin 
+	    perf_ibf_stalls <= {41'b0, counter};
+
+	    if (ibuf_deq_if.valid & scoreboard_delay) begin 
                 perf_scb_stalls <= perf_scb_stalls  + 44'd1;
             end
             if (alu_req_if.valid & !alu_req_if.ready) begin
