@@ -138,11 +138,13 @@ module VX_issue #(
 `endif
 
     always @(my_issue_fire) begin
-         counter = 0;
-	 for (i = 0; i <= 3; i = i + 1) begin
-	    if (ibuf_deq_if.tmask[i] == 1'b1)
-		counter = counter + 1'b1;
-         end
+	if (my_issue_fire == 1'b1) begin
+           counter = 0;
+	   for (i = 0; i <= 3; i = i + 1) begin
+	      if (ibuf_deq_if.tmask[i] == 1'b1)
+	         counter = counter + 1'b1;
+           end
+	end
     end
 
     always @(posedge clk) begin

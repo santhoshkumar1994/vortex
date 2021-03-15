@@ -285,6 +285,7 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
   int dram_utilization = (int)((double(dram_reads + dram_writes) / double(dram_reads + dram_writes + dram_stalls)) * 100);
   int dram_avg_lat = (int)(double(dram_lat) / double(dram_reads));
   fprintf(stream, "PERF: Total active threads =%ld\n", ibuffer_stalls);
+  fprintf(stream, "PERF: Average active threads = %f\n", ((float) ibuffer_stalls) / cycles);
   fprintf(stream, "PERF: scoreboard stalls=%ld\n", scoreboard_stalls);
   fprintf(stream, "PERF: alu unit stalls=%ld\n", alu_stalls);
   fprintf(stream, "PERF: lsu unit stalls=%ld\n", lsu_stalls);
