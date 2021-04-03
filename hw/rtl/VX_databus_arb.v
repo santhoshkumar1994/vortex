@@ -22,7 +22,7 @@ module VX_databus_arb (
     localparam REQ_ASHIFT  = `CLOG2(`DWORD_SIZE);
     localparam REQ_ADDRW   = 32 - REQ_ASHIFT;
     localparam REQ_DATAW   = REQ_ADDRW + 1 + `DWORD_SIZE + (`DWORD_SIZE*8) + `DCORE_TAG_WIDTH;
-    localparam RSP_DATAW   = `NUM_THREADS + `NUM_THREADS * (`DWORD_SIZE*8) + `DCORE_TAG_WIDTH;
+    localparam RSP_DATAW   = 2 * `NUM_THREADS + 2 * `NUM_THREADS * (`DWORD_SIZE*8) + `DCORE_TAG_WIDTH;
 
     //
     // handle requests
@@ -78,7 +78,7 @@ module VX_databus_arb (
         wire [1:0] rsp_ready_in;
         
         wire core_rsp_valid;
-        wire [`NUM_THREADS-1:0] core_rsp_valid_tmask;
+        wire [2 * `NUM_THREADS-1:0] core_rsp_valid_tmask;
 
         assign rsp_data_in[0] = {cache_rsp_if.valid, cache_rsp_if.data, cache_rsp_if.tag};
         assign rsp_data_in[1] = {smem_rsp_if.valid,  smem_rsp_if.data,  smem_rsp_if.tag};
@@ -104,7 +104,7 @@ module VX_databus_arb (
         assign cache_rsp_if.ready = rsp_ready_in[0];
         assign smem_rsp_if.ready  = rsp_ready_in[1];
 
-        assign core_rsp_if.valid  = {`NUM_THREADS{core_rsp_valid}} & core_rsp_valid_tmask;
+        assign core_rsp_if.valid  = {2 * `NUM_THREADS{core_rsp_valid}} & core_rsp_valid_tmask;
 
     end else begin
 

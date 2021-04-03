@@ -233,17 +233,17 @@ module VX_mem_unit # (
         `endif
 
             // Core request
-            .core_req_valid     (smem_req_if.valid),
-            .core_req_rw        (smem_req_if.rw),
-            .core_req_byteen    (smem_req_if.byteen),
-            .core_req_addr      (smem_req_if.addr),
-            .core_req_data      (smem_req_if.data),        
-            .core_req_tag       (smem_req_if.tag),
-            .core_req_ready     (smem_req_if.ready),
+            .core_req_valid     (smem_req_if.valid[`NUM_THREADS-1:0]),
+            .core_req_rw        (smem_req_if.rw[`NUM_THREADS-1:0]),
+            .core_req_byteen    (smem_req_if.byteen[`NUM_THREADS-1:0]),
+            .core_req_addr      (smem_req_if.addr[`NUM_THREADS-1:0]),
+            .core_req_data      (smem_req_if.data[`NUM_THREADS-1:0]),        
+            .core_req_tag       (smem_req_if.tag[`NUM_THREADS-1:0]),
+            .core_req_ready     (smem_req_if.ready[`NUM_THREADS-1:0]),
 
             // Core response
-            .core_rsp_valid     (smem_rsp_if.valid),
-            .core_rsp_data      (smem_rsp_if.data),
+            .core_rsp_valid     (smem_rsp_if.valid[`NUM_THREADS-1:0]),
+            .core_rsp_data      (smem_rsp_if.data[`NUM_THREADS-1:0]),
             .core_rsp_tag       (smem_rsp_if.tag),
             .core_rsp_ready     (smem_rsp_if.ready)
         );

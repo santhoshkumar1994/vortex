@@ -10,17 +10,17 @@ module VX_pipeline #(
     input wire                              reset,
 
     // Dcache core request
-    output wire [`NUM_THREADS-1:0]          dcache_req_valid,
-    output wire [`NUM_THREADS-1:0]          dcache_req_rw,
-    output wire [`NUM_THREADS-1:0][3:0]     dcache_req_byteen,
-    output wire [`NUM_THREADS-1:0][29:0]    dcache_req_addr,
-    output wire [`NUM_THREADS-1:0][31:0]    dcache_req_data,
-    output wire [`NUM_THREADS-1:0][`DCORE_TAG_WIDTH-1:0] dcache_req_tag,    
-    input wire [`NUM_THREADS-1:0]           dcache_req_ready,
+    output wire [2 * `NUM_THREADS-1:0]          dcache_req_valid,
+    output wire [2 * `NUM_THREADS-1:0]          dcache_req_rw,
+    output wire [2 * `NUM_THREADS-1:0][3:0]     dcache_req_byteen,
+    output wire [2 * `NUM_THREADS-1:0][29:0]    dcache_req_addr,
+    output wire [2 * `NUM_THREADS-1:0][31:0]    dcache_req_data,
+    output wire [2 * `NUM_THREADS-1:0][`DCORE_TAG_WIDTH-1:0] dcache_req_tag,    
+    input wire [2 * `NUM_THREADS-1:0]           dcache_req_ready,
 
     // Dcache core reponse    
-    input wire [`NUM_THREADS-1:0]           dcache_rsp_valid,
-    input wire [`NUM_THREADS-1:0][31:0]     dcache_rsp_data,
+    input wire [2 * `NUM_THREADS-1:0]           dcache_rsp_valid,
+    input wire [2 * `NUM_THREADS-1:0][31:0]     dcache_rsp_data,
     input wire [`DCORE_TAG_WIDTH-1:0]       dcache_rsp_tag,    
     output wire                             dcache_rsp_ready,      
 
@@ -61,7 +61,7 @@ module VX_pipeline #(
     //
 
     VX_dcache_core_req_if #(
-        .NUM_REQS(`NUM_THREADS), 
+        .NUM_REQS(2 * `NUM_THREADS), 
         .WORD_SIZE(4), 
         .CORE_TAG_WIDTH(`DCORE_TAG_WIDTH)
     ) dcache_core_req_if();
@@ -79,7 +79,7 @@ module VX_pipeline #(
     //
 
     VX_dcache_core_rsp_if #(
-        .NUM_REQS(`NUM_THREADS), 
+        .NUM_REQS(2 * `NUM_THREADS), 
         .WORD_SIZE(4), 
         .CORE_TAG_WIDTH(`DCORE_TAG_WIDTH)
     ) dcache_core_rsp_if();

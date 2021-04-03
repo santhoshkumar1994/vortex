@@ -297,7 +297,7 @@
 `define DDRAM_TAG_WIDTH         `DDRAM_ADDR_WIDTH
 
 // Core request size
-`define DNUM_REQUESTS           `NUM_THREADS
+`define DNUM_REQUESTS           (2 * `NUM_THREADS)
 
 ////////////////////////// SM Configurable Knobs //////////////////////////////
 
