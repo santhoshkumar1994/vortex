@@ -67,7 +67,7 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!stall_in),
-        .data_in  ({lsu_req_if.valid, is_dup_load, lsu_req_if.wid, {lsu_req_if.tmask, lsu_req_if.tmask}, lsu_req_if.PC, full_address, lsu_req_if.op_type, lsu_req_if.rd, lsu_req_if.wb, {lsu_req_if.store_data, lsu_req_if.store_data}}),
+        .data_in  ({lsu_req_if.valid, is_dup_load, lsu_req_if.wid, { lsu_req_if.tmask & {`NUM_THREADS{lsu_req_if.wb}}, lsu_req_if.tmask}, lsu_req_if.PC, full_address, lsu_req_if.op_type, lsu_req_if.rd, lsu_req_if.wb, {lsu_req_if.store_data, lsu_req_if.store_data}}),
         .data_out ({req_valid,        req_is_dup,  req_wid,        req_tmask,        req_pc,        req_addr,     req_type,           req_rd,        req_wb,        req_data})
     );
 
@@ -261,12 +261,12 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!load_rsp_stall),
-        .data_in  ({(| dcache_rsp_if.valid[`NUM_THREADS - 1:0]), rsp_wid,          rsp_tmask[`NUM_THREADS-1:0],           rsp_pc,          rsp_rd,          rsp_wb,          rsp_data[`NUM_THREADS-1:0],          mbuf_pop}),
+        .data_in  ({(| (dcache_rsp_if.valid[`NUM_THREADS - 1:0] & rsp_tmask[`NUM_THREADS-1:0])), rsp_wid,          rsp_tmask[`NUM_THREADS-1:0],           rsp_pc,          rsp_rd,          rsp_wb,          rsp_data[`NUM_THREADS-1:0],          mbuf_pop}),
         .data_out ({ld_commit_if.valid,      ld_commit_if.wid, ld_commit_if.tmask,  ld_commit_if.PC, ld_commit_if.rd, ld_commit_if.wb, ld_commit_if.data, ld_commit_if.eop})
     );
 
     // Can accept new cache response?
-    assign dcache_rsp_if.ready = ~load_rsp_stall;
+    assign dcache_rsp_if.ready = (~load_rsp_stall);
 
     // scope registration
     `SCOPE_ASSIGN (dcache_req_fire,  dcache_req_if.valid & dcache_req_if.ready);
@@ -282,14 +282,22 @@ module VX_lsu_unit #(
     `SCOPE_ASSIGN (dcache_rsp_tag,   mbuf_raddr);
     
 `ifdef DBG_PRINT_CORE_DCACHE
-   always @(posedge clk) begin        
+   always @(posedge clk) begin
+       $display("%t: Santhosh Read_Address=%0h Pop=%b", $time, mbuf_raddr, mbuf_pop);
+        if (lsu_req_if.valid & lsu_req_if.ready) begin
+            if (lsu_req_if.wb) begin
+                $display("%t: LSU Rd PC=%0h tmask=%b", $time, lsu_req_if.PC, lsu_req_if.tmask);
+            end else begin
+                $display("%t: LSU Wr PC=%0h tmask=%b", $time, lsu_req_if.PC, lsu_req_if.tmask);
+            end
+        end
         if ((| (dcache_req_if.valid & dcache_req_if.ready))) begin
             if ((| dcache_req_if.rw))
-                $display("%t: D$%0d Wr Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, data=%0h", 
-                    $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, dcache_req_if.data);
+                $display("%t: D$%0d Wr Req: wid=%0d, PC=%0h, valid=%0h, ready=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, data=%0h", 
+                    $time, CORE_ID, req_wid, req_pc, dcache_req_if.valid, dcache_req_if.ready, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, dcache_req_if.data);
             else
-                $display("%t: D$%0d Rd Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
-                    $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, req_rd, req_is_dup);
+                $display("%t: D$%0d Rd Req: wid=%0d, PC=%0h, valid=%0h, ready=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
+                    $time, CORE_ID, req_wid, req_pc, dcache_req_if.valid, dcache_req_if.ready, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, req_rd, req_is_dup);
         end
         if ((| dcache_rsp_if.valid) && dcache_rsp_if.ready) begin
             $display("%t: D$%0d Rsp: valid=%b, wid=%0d, PC=%0h, tag=%0h, rd=%0d, data=%0h, is_dup=%b", 

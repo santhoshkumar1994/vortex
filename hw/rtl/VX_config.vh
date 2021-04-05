@@ -291,7 +291,7 @@
 
 // Core Request Queue Size
 `ifndef DCREQ_SIZE
-`define DCREQ_SIZE 4
+`define DCREQ_SIZE 8
 `endif
 
 // Miss Handling Register Size
@@ -328,7 +328,7 @@
 
 // Core Request Queue Size
 `ifndef SCREQ_SIZE
-`define SCREQ_SIZE 4
+`define SCREQ_SIZE 8
 `endif
 
 // L2cache Configurable Knobs /////////////////////////////////////////////////
