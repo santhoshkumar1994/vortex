@@ -245,6 +245,11 @@
 `define FPUQ_SIZE 8
 `endif
 
+// Enable memory prefetching
+`ifndef ENABLE_PREFETCHER
+`define ENABLE_PREFETCHER 0
+`endif
+
 // Icache Configurable Knobs //////////////////////////////////////////////////
 
 // Size of cache in bytes
