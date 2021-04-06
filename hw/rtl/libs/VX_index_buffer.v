@@ -39,11 +39,13 @@ module VX_index_buffer #(
     always @(*) begin
         free_slots_n = free_slots;
         if (release_slot) begin
-            free_slots_n[release_addr] = 1;                
+            free_slots_n[release_addr] = 1;
+            $display("%t: Santhosh : Release", $time);
         end
         if (acquire_slot)  begin
              assert(1 == free_slots[write_addr]) else $error("%t: acquiring used slot at port %d", $time, write_addr);
              free_slots_n[write_addr_r] = 0;
+             $display("%t: Santhosh : Acquire", $time);
         end            
     end    
 
@@ -54,6 +56,7 @@ module VX_index_buffer #(
             full_r       <= 1'b0;            
         end else begin
             if (release_slot) begin
+                $display("%t: Santhosh - Coming here", $time);
                 assert(0 == free_slots[release_addr]) else $error("%t: releasing invalid slot at port %d", $time, release_addr);
             end
             if (acquire_slot || full_r) begin
@@ -82,5 +85,13 @@ module VX_index_buffer #(
         
     assign write_addr = write_addr_r;
     assign full       = full_r;
+
+    always @(free_slots) begin
+        $display ("%t: Santhosh -- FreeSlots = %b", $time, free_slots);
+    end
+
+    always @(free_slots_n) begin
+        $display ("%t: Santhosh -- FreeSlots_N = %b", $time, free_slots_n);
+    end
 
 endmodule

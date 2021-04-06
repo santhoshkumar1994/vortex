@@ -284,23 +284,25 @@ module VX_lsu_unit #(
 `ifdef DBG_PRINT_CORE_DCACHE
    always @(posedge clk) begin
        $display("%t: Santhosh Read_Address=%0h Pop=%b", $time, mbuf_raddr, mbuf_pop);
+       $display("%t: Santhosh Rsp Ready = %b", $time, dcache_rsp_if.ready);      
         if (lsu_req_if.valid & lsu_req_if.ready) begin
             if (lsu_req_if.wb) begin
-                $display("%t: LSU Rd PC=%0h tmask=%b", $time, lsu_req_if.PC, lsu_req_if.tmask);
+                $display("%t: Santhosh LSU Rd PC=%0h tmask=%b", $time, lsu_req_if.PC, lsu_req_if.tmask);
             end else begin
-                $display("%t: LSU Wr PC=%0h tmask=%b", $time, lsu_req_if.PC, lsu_req_if.tmask);
+                $display("%t: Santhosh LSU Wr PC=%0h tmask=%b", $time, lsu_req_if.PC, lsu_req_if.tmask);
             end
         end
+
         if ((| (dcache_req_if.valid & dcache_req_if.ready))) begin
             if ((| dcache_req_if.rw))
-                $display("%t: D$%0d Wr Req: wid=%0d, PC=%0h, valid=%0h, ready=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, data=%0h", 
-                    $time, CORE_ID, req_wid, req_pc, dcache_req_if.valid, dcache_req_if.ready, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, dcache_req_if.data);
+                $display("%t: Santhosh D$%0d Wr Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, data=%0h", 
+                    $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag[0], dcache_req_if.byteen, dcache_req_if.data);
             else
-                $display("%t: D$%0d Rd Req: wid=%0d, PC=%0h, valid=%0h, ready=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
-                    $time, CORE_ID, req_wid, req_pc, dcache_req_if.valid, dcache_req_if.ready, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, req_rd, req_is_dup);
+                $display("%t: Santhosh D$%0d Rd Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
+                    $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag[0], dcache_req_if.byteen, req_rd, req_is_dup);
         end
         if ((| dcache_rsp_if.valid) && dcache_rsp_if.ready) begin
-            $display("%t: D$%0d Rsp: valid=%b, wid=%0d, PC=%0h, tag=%0h, rd=%0d, data=%0h, is_dup=%b", 
+            $display("%t: Santhosh D$%0d Rsp: valid=%b, wid=%0d, PC=%0h, tag=%0h, rd=%0d, data=%0h, is_dup=%b", 
                     $time, CORE_ID, dcache_rsp_if.valid, rsp_wid, rsp_pc, dcache_rsp_if.tag, rsp_rd, dcache_rsp_if.data, rsp_is_dup);
         end
         if (mbuf_full) begin
