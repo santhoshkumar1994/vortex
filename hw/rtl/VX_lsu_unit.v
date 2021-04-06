@@ -33,16 +33,16 @@ module VX_lsu_unit #(
     wire [31:0]                   req_pc;
     wire                          req_is_dup;
 
-    wire                          temp_valid;
-    wire [`NUM_THREADS-1:0]       temp_tmask;
-    wire [`NUM_THREADS-1:0][31:0] temp_addr;       
-    wire [`LSU_BITS-1:0]          temp_type;
-    wire [`NUM_THREADS-1:0][31:0] temp_data;   
-    wire [`NR_BITS-1:0]           temp_rd;
-    wire                          temp_wb;
-    wire [`NW_BITS-1:0]           temp_wid;
-    wire [31:0]                   temp_pc;
-    wire                          temp_is_dup;
+    wire                          latched_valid;
+    wire [`NUM_THREADS-1:0]       latched_tmask;
+    wire [`NUM_THREADS-1:0][31:0] latched_addr;       
+    wire [`LSU_BITS-1:0]          latched_type;
+    wire [`NUM_THREADS-1:0][31:0] latched_data;   
+    wire [`NR_BITS-1:0]           latched_rd;
+    wire                          latched_wb;
+    wire [`NW_BITS-1:0]           latched_wid;
+    wire [31:0]                   latched_pc;
+    wire                          latched_is_dup;
 
 `ifdef ENABLE_PREFETCHER
     wire                          prefetch_valid;
@@ -84,29 +84,29 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!stall_in),
-        .data_in  ({lsu_req_if.valid, is_dup_load, lsu_req_if.wid, lsu_req_if.tmask, lsu_req_if.PC, full_address, lsu_req_if.op_type, lsu_req_if.rd, lsu_req_if.wb, lsu_req_if.store_data}),
-        .data_out ({temp_valid,       temp_is_dup, temp_wid,       temp_tmask,       temp_pc,       temp_addr,    temp_type,          temp_rd,       temp_wb,       temp_data            })
+        .data_in  ({lsu_req_if.valid, is_dup_load,    lsu_req_if.wid,    lsu_req_if.tmask,    lsu_req_if.PC,    full_address,    lsu_req_if.op_type,    lsu_req_if.rd,    lsu_req_if.wb,    lsu_req_if.store_data   }),
+        .data_out ({latched_valid,    latched_is_dup, latched_wid,       latched_tmask,       latched_pc,       latched_addr,    latched_type,          latched_rd,       latched_wb,       latched_data            })
     );
 
 `ifdef ENABLE_PREFETCHER
-    assign req_valid       = temp_valid == 1'b1 ? temp_valid  : prefetch_valid;
-    assign req_is_dup      = temp_valid == 1'b1 ? temp_is_dup : prefetch_is_dup;
-    assign req_wid         = temp_valid == 1'b1 ? temp_wid    : prefetch_wid;
-    assign req_tmask       = temp_valid == 1'b1 ? temp_tmask  : prefetch_tmask;
-    assign req_pc          = temp_valid == 1'b1 ? temp_pc     : prefetch_pc;
-    assign req_addr        = temp_valid == 1'b1 ? temp_addr   : prefetch_addr;
-    assign req_type        = temp_valid == 1'b1 ? temp_type   : prefetch_type;
-    assign req_rd          = temp_valid == 1'b1 ? temp_rd     : prefetch_rd;
-    assign req_wb          = temp_valid == 1'b1 ? temp_wb     : prefetch_wb;
-    assign req_data        = temp_valid == 1'b1 ? temp_data   : prefetch_data;
-    assign req_is_prefetch = temp_valid == 1'b1 ? 1'b0        : 1'b1;
+    assign req_valid       = latched_valid == 1'b1 ? latched_valid  : prefetch_valid;
+    assign req_is_dup      = latched_valid == 1'b1 ? latched_is_dup : prefetch_is_dup;
+    assign req_wid         = latched_valid == 1'b1 ? latched_wid    : prefetch_wid;
+    assign req_tmask       = latched_valid == 1'b1 ? latched_tmask  : prefetch_tmask;
+    assign req_pc          = latched_valid == 1'b1 ? latched_pc     : prefetch_pc;
+    assign req_addr        = latched_valid == 1'b1 ? latched_addr   : prefetch_addr;
+    assign req_type        = latched_valid == 1'b1 ? latched_type   : prefetch_type;
+    assign req_rd          = latched_valid == 1'b1 ? latched_rd     : prefetch_rd;
+    assign req_wb          = latched_valid == 1'b1 ? latched_wb     : prefetch_wb;
+    assign req_data        = latched_valid == 1'b1 ? latched_data   : prefetch_data;
+    assign req_is_prefetch = latched_valid == 1'b1 ? 1'b0           : 1'b1;
 
     wire [`NUM_THREADS-1:0][31:0] prefetch_input_address;    
     for (genvar i = 0; i < `NUM_THREADS; i++) begin
-        assign prefetch_input_address[i] = temp_addr[i] + `DCACHE_LINE_SIZE;
+        assign prefetch_input_address[i] = latched_addr[i] + `DCACHE_LINE_SIZE;
     end
 
-    wire prefetch_valid_input = temp_wb & temp_valid;
+    wire prefetch_valid_input = latched_wb & latched_valid;
 
     VX_pipe_register #(
         .DATAW  (1 + 1 + `NW_BITS + `NUM_THREADS + 32 + (`NUM_THREADS * 32) + `LSU_BITS + `NR_BITS + 1 + (`NUM_THREADS * 32)),
@@ -115,20 +115,20 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!stall_in),
-        .data_in  ({prefetch_valid_input,  temp_is_dup,       temp_wid,            temp_tmask,            temp_pc,            prefetch_input_address,     temp_type,           temp_rd,        temp_wb,        temp_data}),
+        .data_in  ({prefetch_valid_input,  latched_is_dup,    latched_wid,         latched_tmask,         latched_pc,         prefetch_input_address,    latched_type,         latched_rd,     latched_wb,     latched_data }),
         .data_out ({prefetch_valid,        prefetch_is_dup,   prefetch_wid,        prefetch_tmask,        prefetch_pc,        prefetch_addr,              prefetch_type,       prefetch_rd,    prefetch_wb,    prefetch_data})
     );
 `else
-    assign req_valid       = temp_valid;
-    assign req_is_dup      = temp_is_dup;
-    assign req_wid         = temp_wid;
-    assign req_tmask       = temp_tmask;
-    assign req_pc          = temp_pc;
-    assign req_addr        = temp_addr;
-    assign req_type        = temp_type;
-    assign req_rd          = temp_rd;
-    assign req_wb          = temp_wb;
-    assign req_data        = temp_data;
+    assign req_valid       = latched_valid;
+    assign req_is_dup      = latched_is_dup;
+    assign req_wid         = latched_wid;
+    assign req_tmask       = latched_tmask;
+    assign req_pc          = latched_pc;
+    assign req_addr        = latched_addr;
+    assign req_type        = latched_type;
+    assign req_rd          = latched_rd;
+    assign req_wb          = latched_wb;
+    assign req_data        = latched_data;
     assign req_is_prefetch = 1'b0;
 `endif
 
@@ -345,16 +345,16 @@ module VX_lsu_unit #(
                     $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, dcache_req_if.data);
 
                 if (req_is_prefetch) begin
-                    $display("%t: Santhosh - Sending prefetch request for write", $time);
+                    $display("%t: CS7290 - Sending prefetch request for write", $time);
                 end
             else
                 $display("%t: D$%0d Rd Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
                     $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, req_rd, req_is_dup);
 
             if (req_is_prefetch) begin
-                $display("%t: Santhosh - Prefetch load address: %0h", $time, req_addr);
+                $display("%t: CS7290 - Prefetch load address: %0h", $time, req_addr);
             end else begin
-                $display("%t: Santhosh - Normal load address: %0h", $time, req_addr);
+                $display("%t: CS7290 - Normal load address: %0h", $time, req_addr);
             end
         end
         if ((| dcache_rsp_if.valid) && dcache_rsp_if.ready) begin
