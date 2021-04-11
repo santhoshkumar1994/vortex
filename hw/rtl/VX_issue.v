@@ -21,7 +21,6 @@ module VX_issue #(
     VX_fpu_req_if   fpu_req_if,    
     VX_gpu_req_if   gpu_req_if
 );
-
     VX_decode_if  ibuf_deq_if();
     VX_decode_if  execute_if();
     VX_gpr_req_if gpr_req_if();
@@ -48,7 +47,7 @@ module VX_issue #(
         .writeback_if (writeback_if),
         .delay        (scoreboard_delay)
     );
-
+        
     assign gpr_req_if.wid = ibuf_deq_if.wid;
     assign gpr_req_if.rs1 = ibuf_deq_if.rs1;
     assign gpr_req_if.rs2 = ibuf_deq_if.rs2;
@@ -63,7 +62,7 @@ module VX_issue #(
         .gpr_req_if   (gpr_req_if),
         .gpr_rsp_if   (gpr_rsp_if)
     );
-    
+
     assign execute_if.valid     = ibuf_deq_if.valid && ~scoreboard_delay;
     assign execute_if.wid       = ibuf_deq_if.wid;
     assign execute_if.tmask     = ibuf_deq_if.tmask;
@@ -88,13 +87,12 @@ module VX_issue #(
         .csr_req_if (csr_req_if),
         .fpu_req_if (fpu_req_if),
         .gpu_req_if (gpu_req_if)
-    );
+    );     
 
     // issue the instruction
+    assign ibuf_deq_if.ready = !scoreboard_delay && execute_if.ready;     
 
-    assign ibuf_deq_if.ready = !scoreboard_delay && execute_if.ready;
-
-   `SCOPE_ASSIGN (issue_fire,        ibuf_deq_if.valid && ibuf_deq_if.ready);
+    `SCOPE_ASSIGN (issue_fire,        ibuf_deq_if.valid && ibuf_deq_if.ready);
     `SCOPE_ASSIGN (issue_wid,         ibuf_deq_if.wid);
     `SCOPE_ASSIGN (issue_tmask,       ibuf_deq_if.tmask);
     `SCOPE_ASSIGN (issue_pc,          ibuf_deq_if.PC);
@@ -122,15 +120,15 @@ module VX_issue #(
     `SCOPE_ASSIGN (writeback_data,    writeback_if.data);
     `SCOPE_ASSIGN (writeback_eop,     writeback_if.eop);
 
-    `ifdef PERF_ENABLE
-    	reg [43:0] perf_ibf_stalls;
-    	reg [43:0] perf_scb_stalls;
-    	reg [43:0] perf_alu_stalls;
-    	reg [43:0] perf_lsu_stalls;
-    	reg [43:0] perf_csr_stalls;
-    	reg [43:0] perf_gpu_stalls;
-    `ifdef EXT_F_ENABLE
-    	reg [43:0] perf_fpu_stalls;
+`ifdef PERF_ENABLE
+    reg [43:0] perf_ibf_stalls;
+    reg [43:0] perf_scb_stalls;
+    reg [43:0] perf_alu_stalls;
+    reg [43:0] perf_lsu_stalls;
+    reg [43:0] perf_csr_stalls;
+    reg [43:0] perf_gpu_stalls;
+`ifdef EXT_F_ENABLE
+    reg [43:0] perf_fpu_stalls;
 `endif
 
     always @(posedge clk) begin
@@ -170,8 +168,8 @@ module VX_issue #(
         `endif
         end
     end
-
- assign perf_pipeline_if.ibf_stalls = perf_ibf_stalls;
+    
+    assign perf_pipeline_if.ibf_stalls = perf_ibf_stalls;
     assign perf_pipeline_if.scb_stalls = perf_scb_stalls; 
     assign perf_pipeline_if.alu_stalls = perf_alu_stalls;
     assign perf_pipeline_if.lsu_stalls = perf_lsu_stalls;
@@ -202,4 +200,4 @@ module VX_issue #(
     end
 `endif
 
-endmodule 
+endmodule
