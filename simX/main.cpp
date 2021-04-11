@@ -76,6 +76,12 @@ int main(int argc, char **argv) {
     }
   } while (running);
 
+  if (showStats) {
+    for (auto& core : cores) {
+      core->printStats();
+    }
+  }
+
   if (riscv_test) {
     bool status = (1 == cores[0]->getIRegValue(3));
     if (status) {

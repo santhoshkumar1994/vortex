@@ -35,6 +35,9 @@ kernel.bin: kernel.elf
 kernel.elf: $(VX_SRCS)
 	$(VX_CC) $(VX_CFLAGS) $(VX_SRCS) $(VX_LDFLAGS) -o kernel.elf
 
+kernel.hex: kernel.elf
+	$(VX_CP) -O ihex kernel.elf kernel.hex
+
 $(PROJECT): $(SRCS)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -L../../stub -lvortex -o $@
 
