@@ -33,6 +33,8 @@ module VX_lsu_unit #(
     wire [31:0]                   req_pc;
     wire                          req_is_dup;
 
+    //CS7290 
+    //--------------------
     wire                          latched_valid;
     wire [`NUM_THREADS-1:0]       latched_tmask;
     wire [`NUM_THREADS-1:0][31:0] latched_addr;       
@@ -58,7 +60,7 @@ module VX_lsu_unit #(
 `endif
 
     wire                         req_is_prefetch;
-
+    
     wire [`NUM_THREADS-1:0][31:0] full_address;    
     for (genvar i = 0; i < `NUM_THREADS; i++) begin
         assign full_address[i] = lsu_req_if.base_addr[i] + lsu_req_if.offset;
@@ -84,11 +86,14 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!stall_in),
-        .data_in  ({lsu_req_if.valid, is_dup_load,    lsu_req_if.wid,    lsu_req_if.tmask,    lsu_req_if.PC,    full_address,    lsu_req_if.op_type,    lsu_req_if.rd,    lsu_req_if.wb,    lsu_req_if.store_data   }),
-        .data_out ({latched_valid,    latched_is_dup, latched_wid,       latched_tmask,       latched_pc,       latched_addr,    latched_type,          latched_rd,       latched_wb,       latched_data            })
+        //CS7290
+	    .data_in ({lsu_req_if.valid, is_dup_load, lsu_req_if.wid, lsu_req_if.tmask, lsu_req_if.PC, full_address, lsu_req_if.op_type, lsu_req_if.rd, lsu_req_if.wb, lsu_req_if.store_data }),
+	    .data_out ({latched_valid, latched_is_dup, latched_wid, latched_tmask, latched_pc, latched_addr, latched_type, latched_rd, latched_wb, latched_data })
     );
 
-`ifdef ENABLE_PREFETCHER
+    //---PREFETCHER
+    //CS7290 
+    `ifdef ENABLE_PREFETCHER
     assign req_valid       = latched_valid == 1'b1 ? latched_valid  : prefetch_valid;
     assign req_is_dup      = latched_valid == 1'b1 ? latched_is_dup : prefetch_is_dup;
     assign req_wid         = latched_valid == 1'b1 ? latched_wid    : prefetch_wid;
@@ -132,6 +137,8 @@ module VX_lsu_unit #(
     assign req_is_prefetch = 1'b0;
 `endif
 
+    //-------------
+
     // Can accept new request?
     assign lsu_req_if.ready = ~stall_in;
 
@@ -141,8 +148,11 @@ module VX_lsu_unit #(
     wire rsp_wb;
     wire [`LSU_BITS-1:0] rsp_type;
     wire rsp_is_dup;
-    wire rsp_is_prefetch;
 
+    // CS7290---
+    wire rsp_is_prefetch;
+    //---------------
+    
     `UNUSED_VAR (rsp_type)
     
     reg [`LSUQ_SIZE-1:0][`NUM_THREADS-1:0] rsp_rem_mask;         
@@ -178,6 +188,7 @@ module VX_lsu_unit #(
         .write_addr   (mbuf_waddr),  
         .acquire_slot (mbuf_push),       
         .read_addr    (mbuf_raddr),
+	     //CS7290
         .write_data   ({req_wid, req_pc, req_rd, req_wb, req_type, req_offset, req_is_dup, req_is_prefetch}),                    
         .read_data    ({rsp_wid, rsp_pc, rsp_rd, rsp_wb, rsp_type, rsp_offset, rsp_is_dup, rsp_is_prefetch}),
         .release_addr (mbuf_raddr),
@@ -309,7 +320,7 @@ module VX_lsu_unit #(
 
     // send load commit
     wire load_rsp_stall = ~ld_commit_if.ready && ld_commit_if.valid;
-    
+   // Memory prefetcher------------------------ 
     VX_pipe_register #(
         .DATAW  (1 + `NW_BITS + `NUM_THREADS + 32 + `NR_BITS + 1 + (`NUM_THREADS * 32) + 1),
         .RESETW (1)
@@ -317,10 +328,11 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!load_rsp_stall),
-        .data_in  ({(| dcache_rsp_if.valid) & ~rsp_is_prefetch, rsp_wid,          rsp_tmask,           rsp_pc,          rsp_rd,          rsp_wb,          rsp_data,          mbuf_pop         }),
-        .data_out ({ld_commit_if.valid,                         ld_commit_if.wid, ld_commit_if.tmask,  ld_commit_if.PC, ld_commit_if.rd, ld_commit_if.wb, ld_commit_if.data, ld_commit_if.eop })
+        //CS7290
+        .data_in  ({(| dcache_rsp_if.valid) & ~rsp_is_prefetch, rsp_wid,           rsp_tmask,          rsp_pc,          rsp_rd,          rsp_wb,          rsp_data,          mbuf_pop         }),
+        .data_out ({ld_commit_if.valid,                         ld_commit_if.wid,  ld_commit_if.tmask, ld_commit_if.PC, ld_commit_if.rd, ld_commit_if.wb, ld_commit_if.data, ld_commit_if.eop })
     );
-
+   //-------------------------------------------
     // Can accept new cache response?
     assign dcache_rsp_if.ready = ~load_rsp_stall;
 
@@ -340,23 +352,28 @@ module VX_lsu_unit #(
 `ifdef DBG_PRINT_CORE_DCACHE
    always @(posedge clk) begin
         if ((| (dcache_req_if.valid & dcache_req_if.ready))) begin
-            if ((| dcache_req_if.rw))
-                $display("%t: D$%0d Wr Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, data=%0h", 
+            if ((| dcache_req_if.rw)) begin //  CS7290: if statement for write request
+                $display("(LSU_UNIT REQ_INFO WR) %t: D$%0d Wr Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, data=%0h", 
                     $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, dcache_req_if.data);
-
-                if (req_is_prefetch) begin
-                    $display("%t: CS7290 - Sending prefetch request for write", $time);
-                end
-            else
-                $display("%t: D$%0d Rd Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
-                    $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, req_rd, req_is_dup);
-
-            if (req_is_prefetch) begin
-                $display("%t: CS7290 - Prefetch load address: %0h", $time, req_addr);
-            end else begin
-                $display("%t: CS7290 - Normal load address: %0h", $time, req_addr);
+	        // CS7290------------------------------------------------------------------
+	        if (req_is_prefetch) begin
+                $display("(LSU_UNIT REQ_INFO WR) %t: CS7290 - Sending prefetch request for write", $time);
             end
-        end
+	        //-------------------------------------------------------------------------
+	    end // CS7290: if statement for write statement ends
+        else begin // CS7290: else statement for read request starts
+            $display("(LSU_UNIT REQ_INFO RD) %t: D$%0d Rd Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
+            $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, req_rd, req_is_dup);
+
+	        // CS7290------------------------------------------------------------------
+	        if (req_is_prefetch) begin
+                $display("(LSU_UNIT REQ_INFO RD) %t: CS7290 - Prefetch load address: %0h", $time, req_addr);
+            end else begin
+                $display("(LSU_UNIT REQ_INFO RD) %t: CS7290 - Normal load address: %0h", $time, req_addr);
+            end
+	    end // CS7290: else statement for read request ends
+	    // -------------------------------------------------------------
+	         
         if ((| dcache_rsp_if.valid) && dcache_rsp_if.ready) begin
             $display("%t: D$%0d Rsp: valid=%b, wid=%0d, PC=%0h, tag=%0h, rd=%0d, data=%0h, is_dup=%b", 
                     $time, CORE_ID, dcache_rsp_if.valid, rsp_wid, rsp_pc, dcache_rsp_if.tag, rsp_rd, dcache_rsp_if.data, rsp_is_dup);
