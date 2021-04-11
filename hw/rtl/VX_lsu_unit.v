@@ -61,9 +61,6 @@ module VX_lsu_unit #(
 
     wire                         req_is_prefetch;
     
-    //----------------------
-    //
-
     wire [`NUM_THREADS-1:0][31:0] full_address;    
     for (genvar i = 0; i < `NUM_THREADS; i++) begin
         assign full_address[i] = lsu_req_if.base_addr[i] + lsu_req_if.offset;
@@ -89,11 +86,9 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!stall_in),
-        //.data_in  ({lsu_req_if.valid, is_dup_load, lsu_req_if.wid, lsu_req_if.tmask, lsu_req_if.PC, full_address, lsu_req_if.op_type, lsu_req_if.rd, lsu_req_if.wb, lsu_req_if.store_data}),
-        //.data_out ({req_valid,        req_is_dup,  req_wid,        req_tmask,        req_pc,        req_addr,     req_type,           req_rd,        req_wb,        req_data})
         //CS7290
-	.data_in ({lsu_req_if.valid, is_dup_load, lsu_req_if.wid, lsu_req_if.tmask, lsu_req_if.PC, full_address, lsu_req_if.op_type, lsu_req_if.rd, lsu_req_if.wb, lsu_req_if.store_data }),
-	.data_out ({latched_valid, latched_is_dup, latched_wid, latched_tmask, latched_pc, latched_addr, latched_type, latched_rd, latched_wb, latched_data })
+	    .data_in ({lsu_req_if.valid, is_dup_load, lsu_req_if.wid, lsu_req_if.tmask, lsu_req_if.PC, full_address, lsu_req_if.op_type, lsu_req_if.rd, lsu_req_if.wb, lsu_req_if.store_data }),
+	    .data_out ({latched_valid, latched_is_dup, latched_wid, latched_tmask, latched_pc, latched_addr, latched_type, latched_rd, latched_wb, latched_data })
     );
 
     //---PREFETCHER
@@ -183,7 +178,6 @@ module VX_lsu_unit #(
     assign mbuf_raddr = dcache_rsp_if.tag[`DCORE_TAG_ID_BITS-1:0];    
 
     VX_index_buffer #(
-        //.DATAW   (`NW_BITS + 32 + `NR_BITS + 1 + `LSU_BITS + (`NUM_THREADS * 2) + 1),
         .DATAW   (`NW_BITS + 32 + `NR_BITS + 1 + `LSU_BITS + (`NUM_THREADS * 2) + 1 + 1),
         .SIZE    (`LSUQ_SIZE)
     ) req_metadata (
@@ -192,10 +186,8 @@ module VX_lsu_unit #(
         .write_addr   (mbuf_waddr),  
         .acquire_slot (mbuf_push),       
         .read_addr    (mbuf_raddr),
-	//CS7290
-        //.write_data   ({req_wid, req_pc, req_rd, req_wb, req_type, req_offset, req_is_dup}),                    
+	     //CS7290
         .write_data   ({req_wid, req_pc, req_rd, req_wb, req_type, req_offset, req_is_dup, req_is_prefetch}),                    
-        //.read_data    ({rsp_wid, rsp_pc, rsp_rd, rsp_wb, rsp_type, rsp_offset, rsp_is_dup}),
         .read_data    ({rsp_wid, rsp_pc, rsp_rd, rsp_wb, rsp_type, rsp_offset, rsp_is_dup, rsp_is_prefetch}),
         .release_addr (mbuf_raddr),
         .release_slot (mbuf_pop),     
@@ -335,11 +327,9 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!load_rsp_stall),
-        //.data_in  ({(| dcache_rsp_if.valid), rsp_wid,          rsp_tmask,           rsp_pc,          rsp_rd,          rsp_wb,          rsp_data,          mbuf_pop}),
         //CS7290
-        .data_in ({(| dcache_rsp_if.valid) & ~rsp_is_prefetch, rsp_wid, rsp_tmask, rsp_pc, rsp_rd, rsp_wb, rsp_data, mbuf_pop }),
-        //.data_out ({ld_commit_if.valid,      ld_commit_if.wid, ld_commit_if.tmask,  ld_commit_if.PC, ld_commit_if.rd, ld_commit_if.wb, ld_commit_if.data, ld_commit_if.eop})
-        .data_out ({ld_commit_if.valid, ld_commit_if.wid, ld_commit_if.tmask, ld_commit_if.PC, ld_commit_if.rd, ld_commit_if.wb, ld_commit_if.data, ld_commit_if.eop })
+        .data_in  ({(| dcache_rsp_if.valid) & ~rsp_is_prefetch, rsp_wid,           rsp_tmask,          rsp_pc,          rsp_rd,          rsp_wb,          rsp_data,          mbuf_pop }),
+        .data_out ({ld_commit_if.valid,                         ld_commit_if.wid,  ld_commit_if.tmask, ld_commit_if.PC, ld_commit_if.rd, ld_commit_if.wb, ld_commit_if.data, ld_commit_if.eop })
     );
    //-------------------------------------------
     // Can accept new cache response?
