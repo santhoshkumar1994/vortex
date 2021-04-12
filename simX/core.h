@@ -15,6 +15,7 @@
 #include "mem.h"
 #include "warp.h"
 #include "pipeline.h"
+#include "prefetcher.h"
 
 namespace vortex {
 
@@ -70,6 +71,13 @@ public:
 
   void dcache_write(Addr, Word, Size);  
 
+  IPrefetcher *prefetcher;
+
+  std::vector<std::shared_ptr<Warp>> warps_;
+
+  int numLoads;
+  int numPrefetched;
+
 private: 
 
   void schedule();
@@ -84,7 +92,6 @@ private:
   std::vector<RegMask> in_use_fregs_;
   RegMask in_use_vregs_;
   WarpMask stalled_warps_;
-  std::vector<std::shared_ptr<Warp>> warps_;  
   std::vector<WarpMask> barriers_;  
   std::vector<Word> csrs_;
   std::vector<Byte> fcsrs_;
@@ -107,7 +114,7 @@ private:
   uint64_t steps_;
   uint64_t insts_;
   uint64_t loads_;
-  uint64_t stores_; 
+  uint64_t stores_;
 };
 
 } // namespace vortex

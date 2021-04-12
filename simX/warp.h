@@ -4,6 +4,7 @@
 #include <vector>
 #include <stack>
 #include "types.h"
+#include "prefetcher.h"
 
 namespace vortex {
 
@@ -82,7 +83,7 @@ public:
 
 private:
 
-  void execute(const Instr &instr, Pipeline *);
+  void execute(const Instr &instr, Pipeline *, IPrefetcher* prefetcher);
   
   Word id_;
   bool active_;

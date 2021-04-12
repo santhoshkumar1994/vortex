@@ -40,6 +40,9 @@ Core::Core(const ArchDef &arch, Decoder &decoder, MemoryUnit &mem, Word id)
   }
 
   this->clear();
+  prefetcher = new NextLinePrefetcher();
+  numLoads = 0;
+  numPrefetched = 0;
 }
 
 void Core::clear() {
@@ -355,5 +358,7 @@ void Core::printStats() const {
   std::cout << "Steps : " << steps_ << std::endl
             << "Insts : " << insts_ << std::endl
             << "Loads : " << loads_ << std::endl
-            << "Stores: " << stores_ << std::endl;
+            << "Stores: " << stores_ << std::endl
+            << "Num Loads : " << numLoads << std::endl
+            << "Num prefetches : " << numPrefetched << std::endl;
 }

@@ -7,6 +7,7 @@
 #include "util.h"
 #include "instr.h"
 #include "core.h"
+#include "prefetcher.h"
 
 using namespace vortex;
 
@@ -77,7 +78,7 @@ void Warp::step(Pipeline *pipeline) {
   }
   
   // Execute
-  this->execute(*instr, pipeline);
+  this->execute(*instr, pipeline, core_->prefetcher);
 
   // At Debug Level 3, print debug info after each instruction.
   D(4, "Register state:");

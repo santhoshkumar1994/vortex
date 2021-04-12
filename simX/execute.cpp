@@ -12,6 +12,7 @@
 #include "warp.h"
 #include "instr.h"
 #include "core.h"
+#include "prefetcher.h"
 
 using namespace vortex;
 
@@ -68,7 +69,7 @@ static void update_fcrs(Core* core, int tid, int wid, bool outOfRange = false) {
   }
 }
 
-void Warp::execute(const Instr &instr, Pipeline *pipeline) {
+void Warp::execute(const Instr &instr, Pipeline *pipeline, IPrefetcher *prefetcher) {
   assert(tmask_.any());
 
   Word nextPC = PC_ + core_->arch().wsize();
@@ -352,6 +353,13 @@ void Warp::execute(const Instr &instr, Pipeline *pipeline) {
       Word memAddr   = ((rsdata[0] + immsrc) & 0xFFFFFFFC); // word aligned
       Word shift_by  = ((rsdata[0] + immsrc) & 0x00000003) * 8;
       Word data_read = core_->dcache_read(memAddr, 4);
+      
+      if (prefetcher->isAddressPrefetched(memAddr)) {
+        core_->numPrefetched++;
+      }
+      prefetcher->processLoadRequest(getPC(), memAddr, t);
+      core_->numLoads++;
+      
       D(3, "LOAD MEM: ADDRESS=0x" << std::hex << memAddr << ", DATA=0x" << data_read);
       switch (func3) {
       case 0:
@@ -1797,6 +1805,14 @@ void Warp::execute(const Instr &instr, Pipeline *pipeline) {
       break;
     }
   }
+
+  int numActiveWarps = 0;
+  for (auto& w : core_->warps_) {
+    if (w->active()) {
+      numActiveWarps++;
+    }
+  }
+  prefetcher->sendPrefetchRequests(getActiveThreads(), numActiveWarps);
 
   PC_ += core_->arch().wsize();
   if (PC_ != nextPC) {
