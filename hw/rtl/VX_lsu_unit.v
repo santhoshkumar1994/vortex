@@ -129,11 +129,17 @@ module VX_lsu_unit #(
     assign req_is_prefetch = latched_valid == 1'b1 ? 1'b0           : 1'b1;
 
     wire [`NUM_THREADS-1:0][31:0] prefetch_input_address;    
-    for (genvar i = 0; i < `NUM_THREADS; i++) begin
-        assign prefetch_input_address[i] = latched_addr[i] + `DCACHE_LINE_SIZE;
-    end
+    wire prefetch_valid_input;
 
-    wire prefetch_valid_input = latched_wb & latched_valid;
+    VX_next_line_prefetcher #(
+        .ENTRIES (`NUM_THREADS)
+    ) next_line_prefetcher (
+        .valid          (latched_valid),
+        .wb             (latched_wb),
+        .addr_in        (latched_addr),
+        .prefetch_valid (prefetch_valid_input),
+        .addr_out       (prefetch_input_address)
+    );
 
     VX_pipe_register #(
         .DATAW  (1 + 1 + `NW_BITS + `NUM_THREADS + 32 + (`NUM_THREADS * 32) + `LSU_BITS + `NR_BITS + 1 + (`NUM_THREADS * 32)),
