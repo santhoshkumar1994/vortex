@@ -61,28 +61,6 @@ module VX_lsu_unit #(
 
     wire                         req_is_prefetch;
 
-    /*wire valid_;
-    wire ready_;
-    wire [3:0] addr_in_;
-    wire [2:0] action_in_;
-    wire [3:0] data_in_;
-    wire action_out_;
-    wire [3:0] data_out_;
-    wire full_;
-    wire done_;
-
-    VX_table my_table (
-        valid_,
-        ready_,
-        addr_in_,
-        action_in_,
-        data_in_,
-        action_out_,
-        data_out_,
-        full_,
-        done_
-    );*/
-    
     wire [`NUM_THREADS-1:0][31:0] full_address;    
     for (genvar i = 0; i < `NUM_THREADS; i++) begin
         assign full_address[i] = lsu_req_if.base_addr[i] + lsu_req_if.offset;

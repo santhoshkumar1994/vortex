@@ -77,8 +77,6 @@ module VX_apogee_prefetcher #(
     4 -> Finish and generate the prefetch request    
     */
 
-    // The state numbering is not correct. Work on that.
-
     always @(clk) begin
         if (clk == 1'b1) begin
             if (valid_in & wb_in) begin
@@ -152,76 +150,6 @@ module VX_apogee_prefetcher #(
             end
         end
     end
-    
-    /*always @(posedge clk) begin
-        if (valid_in & wb_in) begin
-            for (integer i = 0; i < ENTRIES; i++)
-                if (tmask_in[i] == 1'b1) begin
-                    table_addr_in = pc_in;
-                    action_in_r = 3'b000;
-                    ready_r = 1;
-
-                    @(posedge done);
-                    ready_r = 0;
-
-                    if (action_out == 1'b1) begin // Entry already present in table
-                        action_in_r = 3'b010;
-                        ready_r = 1;
-
-                        @(posedge done);
-                        ready_r = 0;
-
-                        new_offset = (addr[i] - table_row_out[71:40]) / (i - table_row_out[3:0]);
-                        table_row_in = table_row_out;
-                        
-                        if (table_row_out[39:8] == 32'b0) begin // Offset was 0
-                            table_row_in[39:8] = new_offset;
-                            table_row_in[7:4]  = 4'b1;
-                            ready_r = 1;
-
-                            @(posedge done);
-                            ready_r = 0;
-                        end else begin
-                            if (table_row_out[39:8] == new_offset) begin
-                                table_row_in[7:4] = table_row_in[7:4] + 1; // Increasing the confidence                                
-                            end else begin
-                                table_addr_in[7:4] = 4'b0;
-                            end
-
-                            ready_r = 1;
-                            @(posedge done);
-                            ready_r = 0;
-                        end
-
-                    end else begin // Entry not present in table
-                        table_row_in = {addr_in, 32'b0, 4'b0, i};
-                        action_in_r = 3'b001;
-                        ready_r = 1;
-
-                        @(posedge done);
-                        ready_r = 0;
-                    end
-                end
-
-            num_active_threads = 0;
-            for (integer i = 0; i < ENTRIES; i++)
-                if (tmask_in[i] == 1'b1)
-                    num_active_threads = num_active_threads + 1;
-
-            action_in_r = 3'b100;
-            table_addr_in = pc_in;
-            ready_r = 1;
-
-            @(posedge done);
-            ready_r = 0;
-
-            if (table_row_out[7:4] > 1)
-                prefetch_addr_r = table_row_out[71:40] + table_row_out[39:8] * num_active_threads;
-                valid_out_r = 1;
-        end else begin
-            valid_out_r = 0;
-        end
-    end*/
 
     assign valid_out = valid_out_r & wb_in;
     assign addr_out = {prefetch_addr_r, {(ENTRIES-1){32'b0}}};

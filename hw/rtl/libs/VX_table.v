@@ -42,11 +42,13 @@ module VX_table #(
         if (ready == 1'b1) begin
             done_r = 1'b0;
             if (valid) begin
-                // action == 000 -> is_present
-                // action == 001 -> add
-                // action == 010 -> update
-                // action == 011 -> remove
-                // action == 100 -> get row
+                /*
+                action == 000 -> is_present
+                action == 001 -> add
+                action == 010 -> update
+                action == 011 -> remove
+                action == 100 -> get row
+                */
                 if (action_in == 3'b000) begin
                     action_out_r = 1'b0;
                     for (integer i = 0; i < N; i++)
