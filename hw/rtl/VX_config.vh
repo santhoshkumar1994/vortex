@@ -247,7 +247,9 @@
 
 // Enable memory prefetching
 `ifndef ENABLE_PREFETCHER
-`define ENABLE_PREFETCHER 0
+// `define ENABLE_PREFETCHER 0 // Comment this for disabling prefetching
+`define ENABLE_PREFETCHER 1 // Use this for next line prefetcher
+// `define ENABLE_PREFETCHER 2 // Use this for Apogee prefetcher
 `endif
 
 // Icache Configurable Knobs //////////////////////////////////////////////////

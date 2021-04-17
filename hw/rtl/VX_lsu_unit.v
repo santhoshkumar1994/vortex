@@ -109,45 +109,51 @@ module VX_lsu_unit #(
     wire [`NUM_THREADS-1:0][31:0] prefetch_input_address;    
     wire prefetch_valid_input;
 
-    /*VX_next_line_prefetcher #(
-        .ENTRIES (`NUM_THREADS)
-    ) next_line_prefetcher (
-        .valid          (latched_valid),
-        .wb             (latched_wb),
-        .addr_in        (latched_addr),
-        .prefetch_valid (prefetch_valid_input),
-        .addr_out       (prefetch_input_address)
-    );*/
+    generate
+        if (`ENABLE_PREFETCHER == 1) begin
+            VX_next_line_prefetcher #(
+                .ENTRIES (`NUM_THREADS)
+            ) next_line_prefetcher (
+                .valid          (latched_valid),
+                .wb             (latched_wb),
+                .addr_in        (latched_addr),
+                .prefetch_valid (prefetch_valid_input),
+                .addr_out       (prefetch_input_address)
+            );
+        end
 
-    VX_apogee_prefetcher #(
-         .ENTRIES (4),
-         .SIZE (10)
-    ) apogee_prefetcher (
-        .clk (clk),
-        .valid_in (latched_valid),
-        .is_dup_in (latched_is_dup),
-        .wid_in (latched_wid),
-        .tmask_in (latched_tmask),
-        .pc_in (latched_pc),
-        .addr_in (latched_addr),
-        .type_in (latched_type),
-        .rd_in (latched_rd),
-        .wb_in (latched_wb),
-        .data_in (latched_data),
-        .valid_out (prefetch_valid),
-        .is_dup_out (prefetch_is_dup),
-        .wid_out (prefetch_wid),
-        .tmask_out (prefetch_tmask),
-        .pc_out (prefetch_pc),
-        .addr_out (prefetch_addr),
-        .type_out (prefetch_type),
-        .rd_out (prefetch_rd),
-        .wb_out (prefetch_wb),
-        .data_out (prefetch_data)
-    );
+        if (`ENABLE_PREFETCHER == 2) begin
+            VX_apogee_prefetcher #(
+                .ENTRIES (4),
+                .SIZE (10)
+            ) apogee_prefetcher (
+                .clk            (clk),
+                .valid_in       (latched_valid),
+                .is_dup_in      (latched_is_dup),
+                .wid_in         (latched_wid),
+                .tmask_in       (latched_tmask),
+                .pc_in          (latched_pc),
+                .addr_in        (latched_addr),
+                .type_in        (latched_type),
+                .rd_in          (latched_rd),
+                .wb_in          (latched_wb),
+                .data_in        (latched_data),
+                .valid_out      (prefetch_valid),
+                .is_dup_out     (prefetch_is_dup),
+                .wid_out        (prefetch_wid),
+                .tmask_out      (prefetch_tmask),
+                .pc_out         (prefetch_pc),
+                .addr_out       (prefetch_addr),
+                .type_out       (prefetch_type),
+                .rd_out         (prefetch_rd),
+                .wb_out         (prefetch_wb),
+                .data_out       (prefetch_data)
+            );
+        end
+    endgenerate
 
-    assign prefetch_input_address = prefetch_addr;
-    assign prefetch_valid_input = prefetch_valid;
+    assign prefetch_input_address   = prefetch_addr;
+    assign prefetch_valid_input     = prefetch_valid;
 
     VX_pipe_register #(
         .DATAW  (1 + 1 + `NW_BITS + `NUM_THREADS + 32 + (`NUM_THREADS * 32) + `LSU_BITS + `NR_BITS + 1 + (`NUM_THREADS * 32)),
