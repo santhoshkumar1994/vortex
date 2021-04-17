@@ -18,7 +18,9 @@ module VX_table #(
     output wire done
 );
 
-    reg [N-1:0][DATAW-1:0] row_contents;
+    `IGNORE_WARNINGS_BEGIN
+
+    reg [N-1:0][ADDRW + DATAW-1:0] row_contents;
     reg [N-1:0] row_valid;
     
     reg action_out_r;
@@ -27,6 +29,8 @@ module VX_table #(
     reg sim_break_r;
     reg [DATAW-1:0] data_out_r;
 
+    `IGNORE_WARNINGS_END
+
     initial begin
         full_r = 1'b0;
         done_r = 1'b0;
@@ -34,82 +38,85 @@ module VX_table #(
         sim_break_r = 1'b0;
     end
 
-    always @(posedge ready) begin
-        if (valid) begin
-            // action == 000 -> is_present
-            // action == 001 -> add
-            // action == 010 -> update
-            // action == 011 -> remove
-            // action == 100 -> get row
-            if (action_in == 3'b000) begin
-                action_out_r = 1'b0;
-                for (integer i = 0; i < N; i++)
-                    if (row_valid[i] == 1'b1)
-                        if (row_contents[i] == addr_in)
-                            action_out_r = 1'b1;
-                done_r = 1'b1;
-            end
-
-            // Code for add
-            if (action_in == 3'b001) begin
-                for (integer i = 0; i < N; i++)
-                    if (~sim_break_r)
-                        if (row_valid[i] == 1'b0) begin
-                            row_contents[i] = data_in;
-                            row_valid[i] = 1'b1;
-                            sim_break_r = 1'b1;
-                        end
-                sim_break_r = 1'b0;
-
-                // Checking if the table is full
-                for (integer i = 0; i < N; i++)
-                    if (~sim_break_r)
-                        if (row_valid[i] == 1'b0)
-                            sim_break_r = 1'b1;
-
-                full_r = ~sim_break_r;
-                sim_break_r = 1'b0;
-                done_r = 1'b1;
-            end
-
-            // Code for udpate
-            if (action_in == 3'b010) begin
-                for (integer i = 0; i < N; i++)
-                    if (~sim_break_r)
+    always @(ready) begin
+        if (ready == 1'b1) begin
+            done_r = 1'b0;
+            if (valid) begin
+                // action == 000 -> is_present
+                // action == 001 -> add
+                // action == 010 -> update
+                // action == 011 -> remove
+                // action == 100 -> get row
+                if (action_in == 3'b000) begin
+                    action_out_r = 1'b0;
+                    for (integer i = 0; i < N; i++)
                         if (row_valid[i] == 1'b1)
-                            if (row_contents[i] == addr_in) begin
-                                row_contents[i] = data_in;
+                            if (row_contents[i][ADDRW + DATAW - 1:DATAW] == addr_in)
+                                action_out_r = 1'b1;
+                    done_r = 1'b1;
+                end
+
+                // Code for add
+                if (action_in == 3'b001) begin
+                    for (integer i = 0; i < N; i++)
+                        if (~sim_break_r)
+                            if (row_valid[i] == 1'b0) begin
+                                row_contents[i] = {addr_in, data_in};
+                                row_valid[i] = 1'b1;
                                 sim_break_r = 1'b1;
                             end
-                sim_break_r = 1'b0;
-                done_r = 1'b1;
-            end
+                    sim_break_r = 1'b0;
 
-            // Code for remove
-            if (action_in == 3'b011) begin
-                for (integer i = 0; i < N; i++)
-                    if (~sim_break_r)
-                        if (row_valid[i] == 1'b1)
-                            if (row_contents[i] == addr_in) begin
-                                row_valid[i] = 1'b0;
+                    // Checking if the table is full
+                    for (integer i = 0; i < N; i++)
+                        if (~sim_break_r)
+                            if (row_valid[i] == 1'b0)
                                 sim_break_r = 1'b1;
-                            end 
-                sim_break_r = 1'b0;
-                full_r = 1'b0;
-                done_r = 1'b1;
-            end
 
-            // Code for retrieval
-            if (action_in == 3'b100) begin
-                for (integer i = 0; i < N; i++)
-                    if (~sim_break_r)
-                        if (row_valid[i] == 1'b1)
-                            if (row_contents[i] == addr_in) begin
-                                data_out_r = row_contents[i];
-                                sim_break_r = 1'b1;
-                            end
-                sim_break_r = 1'b0;
-                done_r = 1'b1;
+                    full_r = ~sim_break_r;
+                    sim_break_r = 1'b0;
+                    done_r = 1'b1;
+                end
+
+                // Code for udpate
+                if (action_in == 3'b010) begin
+                    for (integer i = 0; i < N; i++)
+                        if (~sim_break_r)
+                            if (row_valid[i] == 1'b1)
+                                if (row_contents[i][ADDRW + DATAW - 1:DATAW] == addr_in) begin
+                                    row_contents[i] = {addr_in, data_in};
+                                    sim_break_r = 1'b1;
+                                end
+                    sim_break_r = 1'b0;
+                    done_r = 1'b1;
+                end
+
+                // Code for remove
+                if (action_in == 3'b011) begin
+                    for (integer i = 0; i < N; i++)
+                        if (~sim_break_r)
+                            if (row_valid[i] == 1'b1)
+                                if (row_contents[i][ADDRW + DATAW - 1:DATAW] == addr_in) begin
+                                    row_valid[i] = 1'b0;
+                                    sim_break_r = 1'b1;
+                                end 
+                    sim_break_r = 1'b0;
+                    full_r = 1'b0;
+                    done_r = 1'b1;
+                end
+
+                // Code for retrieval
+                if (action_in == 3'b100) begin
+                    for (integer i = 0; i < N; i++)
+                        if (~sim_break_r)
+                            if (row_valid[i] == 1'b1)
+                                if (row_contents[i][ADDRW + DATAW - 1:DATAW] == addr_in) begin
+                                    data_out_r = row_contents[i][DATAW - 1:0];
+                                    sim_break_r = 1'b1;
+                                end
+                    sim_break_r = 1'b0;
+                    done_r = 1'b1;
+                end
             end
         end
     end
