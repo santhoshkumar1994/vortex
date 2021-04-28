@@ -48,6 +48,8 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  showStats = true;
+
   ArchDef arch(archString, num_cores, num_warps, num_threads);
 
   Decoder decoder(arch);

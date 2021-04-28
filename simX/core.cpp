@@ -40,7 +40,7 @@ Core::Core(const ArchDef &arch, Decoder &decoder, MemoryUnit &mem, Word id)
   }
 
   this->clear();
-  prefetcher = new NextLinePrefetcher();
+  prefetcher = new ApogeePrefetcher();
   numLoads = 0;
   numPrefetched = 0;
 }

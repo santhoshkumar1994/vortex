@@ -62,6 +62,7 @@ namespace vortex {
                 entry->tid = tid;
                 entry->confidence = 0;
                 entry->offset = 0;
+                entryForPC.insert({PC, entry});
             }
 
             void updateEntryForPC(Word PC, Word address, int tid) {
@@ -96,7 +97,7 @@ namespace vortex {
             void sendPrefetchRequests(int numActiveThreadsInCurrentWarp, int numActiveWarps) {
                 vector<Word> processedEntries;
                 for (auto& p: entryForPC) {
-                    if (p.second->confidence > numActiveThreadsInCurrentWarp - 2) {
+                    if (p.second->confidence > numActiveThreadsInCurrentWarp - 2) {                        
                         Word newAddress = p.second->address + p.second->offset * (numActiveThreadsInCurrentWarp * numActiveWarps);
                         Word newLineAddress = newAddress / 64;
                         prefetchCache.insert(newLineAddress); 
