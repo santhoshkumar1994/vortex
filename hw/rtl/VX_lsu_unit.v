@@ -123,6 +123,9 @@ module VX_lsu_unit #(
         end
 
         if (`ENABLE_PREFETCHER == 2) begin
+            wire [`NUM_THREADS-1:0][31:0] prefetch_input_address_temp;    
+            wire prefetch_valid_input_temp;
+
             VX_apogee_prefetcher #(
                 .ENTRIES (4),
                 .SIZE (10)
@@ -138,22 +141,22 @@ module VX_lsu_unit #(
                 .rd_in          (latched_rd),
                 .wb_in          (latched_wb),
                 .data_in        (latched_data),
-                .valid_out      (prefetch_valid),
+                .valid_out      (prefetch_valid_input_temp),
                 .is_dup_out     (prefetch_is_dup),
                 .wid_out        (prefetch_wid),
                 .tmask_out      (prefetch_tmask),
                 .pc_out         (prefetch_pc),
-                .addr_out       (prefetch_addr),
+                .addr_out       (prefetch_input_address_temp),
                 .type_out       (prefetch_type),
                 .rd_out         (prefetch_rd),
                 .wb_out         (prefetch_wb),
                 .data_out       (prefetch_data)
             );
+
+            assign prefetch_input_address   = prefetch_input_address_temp;
+            assign prefetch_valid_input     = prefetch_valid_input_temp;
         end
     endgenerate
-
-    assign prefetch_input_address   = prefetch_addr;
-    assign prefetch_valid_input     = prefetch_valid;
 
     VX_pipe_register #(
         .DATAW  (1 + 1 + `NW_BITS + `NUM_THREADS + 32 + (`NUM_THREADS * 32) + `LSU_BITS + `NR_BITS + 1 + (`NUM_THREADS * 32)),
@@ -162,7 +165,7 @@ module VX_lsu_unit #(
         .clk      (clk),
         .reset    (reset),
         .enable   (!stall_in),
-        .data_in  ({prefetch_valid_input,  latched_is_dup,    latched_wid,         latched_tmask,         latched_pc,         prefetch_input_address,    latched_type,         latched_rd,     latched_wb,     latched_data }),
+        .data_in  ({prefetch_valid_input,  latched_is_dup,    latched_wid,         latched_tmask,         latched_pc,         prefetch_input_address,     latched_type,        latched_rd,     latched_wb,     latched_data }),
         .data_out ({prefetch_valid,        prefetch_is_dup,   prefetch_wid,        prefetch_tmask,        prefetch_pc,        prefetch_addr,              prefetch_type,       prefetch_rd,    prefetch_wb,    prefetch_data})
     );
 `else
@@ -403,7 +406,7 @@ module VX_lsu_unit #(
             end
 	        //-------------------------------------------------------------------------
 	    end // CS7290: if statement for write statement ends
-        else begin // CS7290: else statement for read request starts
+        end else begin // CS7290: else statement for read request starts
             $display("(LSU_UNIT REQ_INFO RD) %t: D$%0d Rd Req: wid=%0d, PC=%0h, tmask=%b, addr=%0h, tag=%0h, byteen=%0h, rd=%0d, is_dup=%b", 
             $time, CORE_ID, req_wid, req_pc, (dcache_req_if.valid & dcache_req_if.ready), req_addr, dcache_req_if.tag, dcache_req_if.byteen, req_rd, req_is_dup);
 
