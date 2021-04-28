@@ -22,6 +22,26 @@ namespace vortex {
             virtual void processLoadRequest(Word PC, Word address, int tid) = 0;
             virtual void sendPrefetchRequests(int numActiveThreadsInCurrentWarp, int numActiveWarps) = 0;
             virtual bool isAddressPrefetched(Word address) = 0;
+            virtual void reset() = 0;
+    };
+
+    class NoPrefetcher : public IPrefetcher {
+        public:
+        void processLoadRequest(Word PC, Word address, int tid) {
+            // NOOP
+        }
+
+        void sendPrefetchRequests(int numActiveThreadsInCurrentWarp, int numActiveWarps) {
+            // NOOP
+        }
+
+        void reset() {
+            // NOOP
+        }
+
+        bool isAddressPrefetched(Word address) {
+            return false;
+        }
     };
 
     class NextLinePrefetcher : public IPrefetcher {
@@ -29,7 +49,9 @@ namespace vortex {
         unordered_set<Word> prefetchCache;
 
         void processLoadRequest(Word PC, Word address, int tid) {
-            prefetchCache.insert((address + 64) / 64);
+            if (prefetchCache.find((address + 64) / 64) == prefetchCache.end()) {
+                prefetchCache.insert((address + 64) / 64);
+            }
         }
 
         void sendPrefetchRequests(int numActiveThreadsInCurrentWarp, int numActiveWarps) {
@@ -42,6 +64,10 @@ namespace vortex {
             } else {
                 return false;
             }
+        }
+
+        void reset() {
+            prefetchCache.clear();
         }
     };
 
@@ -118,6 +144,11 @@ namespace vortex {
                 } else {
                     return false;
                 }
+            }
+
+            void reset() {
+                entryForPC.clear();
+                prefetchCache.clear();
             }
     };
 }
