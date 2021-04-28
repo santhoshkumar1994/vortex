@@ -82,7 +82,7 @@ public:
         mutex_.lock();
         is_done_ = true;
         mutex_.unlock();
-        
+
         thread_.join();
     }
 
@@ -150,6 +150,12 @@ public:
 
             std::this_thread::sleep_for(std::chrono::seconds(1));            
         }
+
+        for (int i = 0; i < arch_.num_cores(); ++i) {
+            cores_[i]->printStats();
+            cores_[i]->prefetcher->reset();
+        }
+
         return 0;
     }
 
