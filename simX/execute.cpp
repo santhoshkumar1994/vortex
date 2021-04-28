@@ -354,10 +354,10 @@ void Warp::execute(const Instr &instr, Pipeline *pipeline, IPrefetcher *prefetch
       Word shift_by  = ((rsdata[0] + immsrc) & 0x00000003) * 8;
       Word data_read = core_->dcache_read(memAddr, 4);
       
-      if (prefetcher->isAddressPrefetched(memAddr)) {
+      if (prefetcher->isAddressPrefetched(memAddr, core_->num_steps())) {
         core_->numPrefetched++;
       }
-      prefetcher->processLoadRequest(getPC(), memAddr, t);
+      prefetcher->processLoadRequest(getPC(), memAddr, t, core_->num_steps());
       core_->numLoads++;
       
       D(3, "LOAD MEM: ADDRESS=0x" << std::hex << memAddr << ", DATA=0x" << data_read);
@@ -1812,7 +1812,7 @@ void Warp::execute(const Instr &instr, Pipeline *pipeline, IPrefetcher *prefetch
       numActiveWarps++;
     }
   }
-  prefetcher->sendPrefetchRequests(getActiveThreads(), numActiveWarps);
+  prefetcher->sendPrefetchRequests(getActiveThreads(), numActiveWarps, core_->num_steps());
 
   PC_ += core_->arch().wsize();
   if (PC_ != nextPC) {

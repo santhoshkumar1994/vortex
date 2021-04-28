@@ -360,5 +360,6 @@ void Core::printStats() const {
             << "Loads : " << loads_ << std::endl
             << "Stores: " << stores_ << std::endl
             << "Num Loads : " << numLoads << std::endl
-            << "Num prefetches : " << numPrefetched << std::endl;
+            << "Num prefetches : " << numPrefetched << std::endl
+            << "Mean between between access and prefetch : " << prefetcher->getMeanTimeBetweenPrefetchAndAccess() << std::endl;
 }
