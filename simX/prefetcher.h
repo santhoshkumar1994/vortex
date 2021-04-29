@@ -24,6 +24,7 @@ namespace vortex {
             virtual bool isAddressPrefetched(Word address, uint64_t step) = 0;
             virtual void reset() = 0;
             virtual double getMeanTimeBetweenPrefetchAndAccess() = 0;
+            virtual double getPercentageUsefulPrefetches() = 0;
     };
 
     class NoPrefetcher : public IPrefetcher {
@@ -47,6 +48,10 @@ namespace vortex {
         double getMeanTimeBetweenPrefetchAndAccess() {
             return 0.0;
         }
+
+        double getPercentageUsefulPrefetches() {
+            return 0.0;
+        }
     };
 
     class NextLinePrefetcher : public IPrefetcher {
@@ -55,10 +60,12 @@ namespace vortex {
         unordered_map<Word, uint64_t> prefetchStepForAddress;
         int numSuccessfulPrefetches;
         int totalTimeBetweenPrefetchAndAccess;
+        int prefetchesSent;
 
         NextLinePrefetcher() {
             numSuccessfulPrefetches = 0;
             totalTimeBetweenPrefetchAndAccess = 0;
+            prefetchesSent = 0;
         }
 
         void processLoadRequest(Word PC, Word address, int tid, uint64_t step) {
@@ -66,6 +73,8 @@ namespace vortex {
                 prefetchCache.insert((address + 64) / 64);
                 prefetchStepForAddress.insert({(address + 64) / 64, step});
             }
+
+            prefetchesSent++;
         }
 
         void sendPrefetchRequests(int numActiveThreadsInCurrentWarp, int numActiveWarps, uint64_t step) {
@@ -88,6 +97,10 @@ namespace vortex {
 
         double getMeanTimeBetweenPrefetchAndAccess() {
             return ((double)totalTimeBetweenPrefetchAndAccess) / numSuccessfulPrefetches;
+        }
+
+        double getPercentageUsefulPrefetches() {
+            return ((double) (numSuccessfulPrefetches)) / prefetchesSent;
         }
     };
 
@@ -134,10 +147,12 @@ namespace vortex {
             unordered_map<Word, uint64_t> prefetchStepForAddress;
             int numSuccessfulPrefetches;
             int totalTimeBetweenPrefetchAndAccess;
+            int prefetchesSent;
 
             ApogeePrefetcher() {
                 numSuccessfulPrefetches = 0;
                 totalTimeBetweenPrefetchAndAccess = 0;
+                prefetchesSent = 0;
             }
 
             void processLoadRequest(Word PC, Word address, int tid, uint64_t step) {
@@ -157,6 +172,7 @@ namespace vortex {
                         prefetchCache.insert(newLineAddress);
                         prefetchStepForAddress.insert({newLineAddress, step});
                         processedEntries.push_back(p.first);
+                        prefetchesSent++;
                     }
                 }
 
@@ -184,6 +200,10 @@ namespace vortex {
 
             double getMeanTimeBetweenPrefetchAndAccess() {
                 return ((double)totalTimeBetweenPrefetchAndAccess) / numSuccessfulPrefetches;
+            }
+
+            double getPercentageUsefulPrefetches() {
+                return ((double) (numSuccessfulPrefetches)) / prefetchesSent;
             }
     };
 }
